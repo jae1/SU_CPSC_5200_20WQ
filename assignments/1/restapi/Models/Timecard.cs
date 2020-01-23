@@ -192,6 +192,8 @@ namespace restapi.Models
             return annotatedLine;
         }
 
+        public void RemoveLine(Guid lineId)         {             Lines.Remove(Lines.Single(l => l.UniqueIdentifier == lineId));         }
+        
         public bool CanBeDeleted()
         {
             return (Status == TimecardStatus.Cancelled || Status == TimecardStatus.Draft);
