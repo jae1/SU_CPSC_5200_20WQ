@@ -14,8 +14,6 @@ namespace restapi.Controllers
 
         private readonly ILogger logger;
 
-        private const int MANAGER_ID = 9999;
-        
         public TimesheetsController(ILogger<TimesheetsController> logger)
         {
             repository = new TimesheetsRepository();
@@ -180,7 +178,45 @@ namespace restapi.Controllers
             }
         }
 
-        [HttpPost("{id:guid}/submittal")]         [Produces(ContentTypes.Transition)]         [ProducesResponseType(typeof(Transition), 200)]         [ProducesResponseType(404)]         [ProducesResponseType(typeof(InvalidStateError), 409)]         [ProducesResponseType(typeof(EmptyTimecardError), 409)]         [ProducesResponseType(typeof(InvalidIdError), 409)]         public IActionResult Submit(Guid id, [FromBody] Submittal submittal)         {             logger.LogInformation($"Looking for timesheet {id} ");              Timecard timecard = repository.Find(id);              if (timecard != null)             {                 if (timecard.Status != TimecardStatus.Draft)                 {                     return StatusCode(409, new InvalidStateError() { });                 }                  if (timecard.Lines.Count < 1)                 {                     return StatusCode(409, new EmptyTimecardError() { });                 }                  // make sure the submitter is the same as the timecard person                 if (submittal.Person != timecard.Employee)                 {                     return StatusCode(409, new InvalidIdError() { });                 }                  var transition = new Transition(submittal, TimecardStatus.Submitted);                  logger.LogInformation($"Adding submittal {transition} ");                  timecard.Transitions.Add(transition);                  repository.Update(timecard);                  return Ok(transition);             }             else             {                 return NotFound();             }         } 
+        [HttpPost("{id:guid}/submittal")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(InvalidStateError), 409)]
+        [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        public IActionResult Submit(Guid id, [FromBody] Submittal submittal)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status != TimecardStatus.Draft)
+                {
+                    return StatusCode(409, new InvalidStateError() { });
+                }
+
+                if (timecard.Lines.Count < 1)
+                {
+                    return StatusCode(409, new EmptyTimecardError() { });
+                }
+
+                var transition = new Transition(submittal, TimecardStatus.Submitted);
+
+                logger.LogInformation($"Adding submittal {transition}");
+
+                timecard.Transitions.Add(transition);
+
+                repository.Update(timecard);
+
+                return Ok(transition);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
 
         [HttpGet("{id:guid}/submittal")]
         [Produces(ContentTypes.Transition)]
@@ -215,10 +251,40 @@ namespace restapi.Controllers
             }
         }
 
-        [HttpPost("{id:guid}/cancellation")]         [Produces(ContentTypes.Transition)]         [ProducesResponseType(typeof(Transition), 200)]         [ProducesResponseType(404)]         [ProducesResponseType(typeof(InvalidStateError), 409)]         [ProducesResponseType(typeof(EmptyTimecardError), 409)]
-        [ProducesResponseType(typeof(InvalidIdError), 409)]         public IActionResult Cancel(Guid id, [FromBody] Cancellation cancellation)         {             logger.LogInformation($"Looking for timesheet {id} ");              Timecard timecard = repository.Find(id);              if (timecard != null)             {                 if (timecard.Status != TimecardStatus.Draft && timecard.Status != TimecardStatus.Submitted)                 {                     return StatusCode(409, new InvalidStateError() { });                 } 
-                // make sure the canceller is the timecard person, or the manager
-                if (cancellation.Person != timecard.Employee && cancellation.Person != MANAGER_ID)                 {                     return StatusCode(409, new InvalidIdError() { });                 }                  var transition = new Transition(cancellation, TimecardStatus.Cancelled);                  logger.LogInformation($"Adding cancellation transition {transition} ");                  timecard.Transitions.Add(transition);                  repository.Update(timecard);                  return Ok(transition);             }             else             {                 return NotFound();             }         }
+        [HttpPost("{id:guid}/cancellation")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(InvalidStateError), 409)]
+        [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        public IActionResult Cancel(Guid id, [FromBody] Cancellation cancellation)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status != TimecardStatus.Draft && timecard.Status != TimecardStatus.Submitted)
+                {
+                    return StatusCode(409, new InvalidStateError() { });
+                }
+
+                var transition = new Transition(cancellation, TimecardStatus.Cancelled);
+
+                logger.LogInformation($"Adding cancellation transition {transition}");
+
+                timecard.Transitions.Add(transition);
+
+                repository.Update(timecard);
+
+                return Ok(transition);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
 
         [HttpGet("{id:guid}/cancellation")]
         [Produces(ContentTypes.Transition)]
@@ -253,10 +319,41 @@ namespace restapi.Controllers
             }
         }
 
-        [HttpPost("{id:guid}/rejection")]         [Produces(ContentTypes.Transition)]         [ProducesResponseType(typeof(Transition), 200)]         [ProducesResponseType(404)]         [ProducesResponseType(typeof(InvalidStateError), 409)]         [ProducesResponseType(typeof(EmptyTimecardError), 409)]
-        [ProducesResponseType(typeof(InvalidIdError), 409)]         public IActionResult Reject(Guid id, [FromBody] Rejection rejection)         {             logger.LogInformation($"Looking for timesheet {id} ");              Timecard timecard = repository.Find(id);              if (timecard != null)             {                 if (timecard.Status != TimecardStatus.Submitted)                 {                     return StatusCode(409, new InvalidStateError() { });                 } 				
-				// make sure only the manager can reject                 if (rejection.Person != MANAGER_ID)                 {                     return StatusCode(409, new InvalidIdError() { });                 }                  var transition = new Transition(rejection, TimecardStatus.Rejected);                  logger.LogInformation($"Adding rejection transition {transition} ");                  timecard.Transitions.Add(transition);                  repository.Update(timecard);                  return Ok(transition);             }             else             {                 return NotFound();             }         }
-        
+        [HttpPost("{id:guid}/rejection")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(InvalidStateError), 409)]
+        [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        public IActionResult Reject(Guid id, [FromBody] Rejection rejection)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status != TimecardStatus.Submitted)
+                {
+                    return StatusCode(409, new InvalidStateError() { });
+                }
+
+                var transition = new Transition(rejection, TimecardStatus.Rejected);
+
+                logger.LogInformation($"Adding rejection transition {transition}");
+
+                timecard.Transitions.Add(transition);
+
+                repository.Update(timecard);
+
+                return Ok(transition);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
         [HttpGet("{id:guid}/rejection")]
         [Produces(ContentTypes.Transition)]
         [ProducesResponseType(typeof(Transition), 200)]
@@ -290,7 +387,40 @@ namespace restapi.Controllers
             }
         }
 
-        [HttpPost("{id:guid}/approval")]         [Produces(ContentTypes.Transition)]         [ProducesResponseType(typeof(Transition), 200)]         [ProducesResponseType(404)]         [ProducesResponseType(typeof(InvalidStateError), 409)]         [ProducesResponseType(typeof(EmptyTimecardError), 409)]         [ProducesResponseType(typeof(InvalidIdError), 409)]         public IActionResult Approve(Guid id, [FromBody] Approval approval)         {             logger.LogInformation($"Looking for timesheet {id} ");              Timecard timecard = repository.Find(id);              if (timecard != null)             {                 if (timecard.Status != TimecardStatus.Submitted)                 {                     return StatusCode(409, new InvalidStateError() { });                 }                  // make sure that only the manager can approve                 if (approval.Approver != MANAGER_ID)                 {                     return StatusCode(409, new InvalidIdError() { });                 }                  var transition = new Transition(approval, TimecardStatus.Approved);                  logger.LogInformation($"Adding approval transition {transition} ");                  timecard.Transitions.Add(transition);                  repository.Update(timecard);                  return Ok(transition);             }             else             {                 return NotFound();             }         }
+        [HttpPost("{id:guid}/approval")]
+        [Produces(ContentTypes.Transition)]
+        [ProducesResponseType(typeof(Transition), 200)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(typeof(InvalidStateError), 409)]
+        [ProducesResponseType(typeof(EmptyTimecardError), 409)]
+        public IActionResult Approve(Guid id, [FromBody] Approval approval)
+        {
+            logger.LogInformation($"Looking for timesheet {id}");
+
+            Timecard timecard = repository.Find(id);
+
+            if (timecard != null)
+            {
+                if (timecard.Status != TimecardStatus.Submitted)
+                {
+                    return StatusCode(409, new InvalidStateError() { });
+                }
+
+                var transition = new Transition(approval, TimecardStatus.Approved);
+
+                logger.LogInformation($"Adding approval transition {transition}");
+
+                timecard.Transitions.Add(transition);
+
+                repository.Update(timecard);
+
+                return Ok(transition);
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
 
         [HttpGet("{id:guid}/approval")]
         [Produces(ContentTypes.Transition)]
