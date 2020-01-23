@@ -90,6 +90,14 @@ namespace restapi.Models
                         Reference = $"/timesheets/{UniqueIdentifier}/lines"
                     });
 
+                    links.Add(new ActionLink()
+                    {
+                        Method = Method.Delete,
+                        Type = ContentTypes.Deletion,
+                        Relationship = ActionRelationship.Delete,
+                        Reference = $"/timesheets/{UniqueIdentifier}/deletion"
+                    });
+
                     break;
 
                 case TimecardStatus.Submitted:
@@ -124,7 +132,14 @@ namespace restapi.Models
                     break;
 
                 case TimecardStatus.Cancelled:
-                    // terminal state, nothing possible here
+                    links.Add(new ActionLink()
+                    {
+                        Method = Method.Delete,
+                        Type = ContentTypes.Deletion,
+                        Relationship = ActionRelationship.Delete,
+                        Reference = $"/timesheets/{UniqueIdentifier}/deletion"
+                    });
+
                     break;
             }
 
