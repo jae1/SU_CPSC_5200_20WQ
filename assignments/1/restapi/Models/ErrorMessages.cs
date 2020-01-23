@@ -20,4 +20,12 @@ namespace restapi.Models
 
         public string Message { get => "No state transition of requested type present in timecard"; }
     }
+
+
+    public class InvalidIdError
+    {
+        public int ErrorCode { get => 103; }
+
+        public string Message { get => "Invalid User ID"; }
+    }
 }
